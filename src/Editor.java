@@ -54,17 +54,9 @@ public class Editor extends Application {
                     // Ignore control keys, which have non-zero length, as well as the backspace
                     // key, which is represented as a character of value = 8 on Windows.
 
-                    if (characterTyped.equals("\r")) {
-                        // Checks to see if user has pressed the return/enter key
-                        // Adds a newline to the text
-                        text.addLine();
-
-                    } else {
-                        // Adds a character normally
-                        text.add(characterTyped);
-                    }
-
+                    text.add(characterTyped);
                     keyEvent.consume();
+
                 }
             } else if (keyEvent.getEventType() == KeyEvent.KEY_PRESSED) {
                 // Arrow keys should be processed using the KEY_PRESSED event, because KEY_PRESSED
@@ -100,6 +92,11 @@ public class Editor extends Application {
                     } else if (code == KeyCode.HOME) {
                         // Moves cursor so that it is in the beginning of the line it is on
                         text.homeKey();
+
+                    } else if (code == KeyCode.ENTER) {
+                        // Adds a newline to the text
+                        text.add("\n");
+
                     }
                 }
             }
@@ -134,7 +131,7 @@ public class Editor extends Application {
     }
 
     /** Makes the text bounding box change color periodically. */
-    public void makeCurosrBlink() {
+    public void makeCursorBlink() {
         // Create a Timeline that will call the "handle" function of CursorHandler
         // every 1 second.
         final Timeline timeline = new Timeline();
@@ -178,13 +175,13 @@ public class Editor extends Application {
         cursor = new Rectangle(1, 1);
         text.setCursor(cursor);
         root.getChildren().add(cursor);
-        makeCurosrBlink();
+        makeCursorBlink();
 
         // Adds everything from the initial file into text
         text.addInitial(initial);
         text.save(writer);
 
-        primaryStage.setTitle("Editor 2.0");
+        primaryStage.setTitle("Editor 2.0   " + fileName);
 
         // This is boilerplate, necessary to setup the window where things are displayed.
         primaryStage.setScene(scene);
@@ -208,11 +205,12 @@ public class Editor extends Application {
                     BufferedReader bufferedReader = new BufferedReader(reader);
 
                     int intRead;
-                    initial = "";
+                    StringBuilder str = new StringBuilder("");
                     while ((intRead = bufferedReader.read()) != -1) {
-                        initial += (char) intRead;
+                        str.append((char) intRead);
                     }
 
+                    initial = str.toString();
                     bufferedReader.close();
                 }
                 writer = new FileWriter(fileName);

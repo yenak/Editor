@@ -20,7 +20,11 @@ public class LinkedList {
          there is a newline.
          Each new character will be added before the cursor, so you delete the Node before the cursor (when using
          backspace).
+         Newlines are implemented through a boolean in the Node class. This is because the Text with a newline
+         character is double the height of a regular character. To keep heights consistent, we utilize the boolean.
+         This means that when we save, we have to convert the text in the Nodes with newLine as true to "\n".
     */
+
     private static final int STARTING_FONT_SIZE = 20;
 
     private Node start;
@@ -55,9 +59,15 @@ public class LinkedList {
         Text text;
         Node prev;
         Node next;
+        boolean newline = false;
 
         Node(String newText) {
-            text = new Text(cursorX(), cursorY(), newText);
+            if (newText.equals("\n")) {
+                text = new Text(cursorX(), cursorY(), "");
+                newline = true;
+            } else {
+                text = new Text(cursorX(), cursorY(), newText);
+            }
             text.setFont(Font.font(fontName, fontSize));
             text.setTextOrigin(VPos.TOP);
             root.getChildren().add(text);
@@ -92,11 +102,6 @@ public class LinkedList {
             curr = newNode;
         }
         render();
-    }
-
-    public void addLine() {
-        // Adds a newline where the cursor node is
-        // TODO: add a newline
     }
 
     public void delete() {
@@ -155,8 +160,10 @@ public class LinkedList {
             Text text = current.text;
             text.setFont(Font.font(fontName, fontSize));
             int width = (int) text.getLayoutBounds().getWidth();
-            if (x + width > (windowWidth - 5) && !text.getText().equals(" ")) {
-                // if the new text goes over the page width and it is not a space, move onto next line
+            if ((x + width > (windowWidth - 5) && !text.getText().equals(" ")) || current.newline) {
+                // If the new text goes over the page width and it is not a space, move onto next line
+                // If the new text is a newline character, move onto next line
+
                 x = 5;
                 y += text.getLayoutBounds().getHeight();
                 totalLines++;
@@ -170,18 +177,19 @@ public class LinkedList {
             x += width;
             current = current.next;
         }
-//        System.out.println(totalLines);
         updateCursor();
     }
 
     public void save(FileWriter writer) {
         // Puts all the text into a string that is to be written to the file.
-//        String text = "";
         StringBuilder text = new StringBuilder("");
         Node current = start.next;
         while (current != end) {
-//            text += current.text.getText();
-            text.append(current.text.getText());
+            String newText = current.text.getText();
+            if (current.newline) {
+                newText = "\n";
+            }
+            text.append(newText);
             current = current.next;
         }
         try {
@@ -209,10 +217,13 @@ public class LinkedList {
 
     public void homeKey() {
         // Moves the cursor to the Node that is in the beginning of the line the cursor is on
+        System.out.println(cursorY());
+        System.out.println(getLine(cursor));
         cursor = lines[getLine(cursor)];
         if (cursor == start) {
             cursor = start.next;
         }
+        System.out.println(cursorY());
         updateCursor();
     }
 
@@ -222,10 +233,7 @@ public class LinkedList {
         ref.setFont(Font.font(fontName, fontSize));
         int yPos = (int) node.text.getY();
         int yRef = (int) ref.getLayoutBounds().getHeight();
-        System.out.println(yPos);
-        System.out.println(yRef);
-        System.out.println((int) (yPos / yRef));
-        return (int) (yPos / yRef);
+        return yPos / yRef;
     }
 
     private void resize(int newCap) {
