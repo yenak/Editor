@@ -59,7 +59,8 @@ public class LinkedList {
         Text text;
         Node prev;
         Node next;
-        boolean newline = false;
+        boolean newline = false; // only true if newline character
+        boolean startLine = false; // only true if it is the start of a line
 
         Node(String newText) {
             if (newText.equals("\n")) {
@@ -177,6 +178,9 @@ public class LinkedList {
                     resize(capacity * factor);
                 }
                 lines[totalLines] = current;
+                current.startLine = true;
+            } else {
+                current.startLine = false;
             }
             text.setX(x);
             text.setY(y);
@@ -240,6 +244,60 @@ public class LinkedList {
             cursor = end;
         }
         updateCursor();
+    }
+
+    public void moveUp() {
+        // Moves the cursor up
+        int line = getLine();
+        int xPos = cursorX();
+        if (line != 0) {
+            cursor = getClosest(line - 1, xPos);
+            updateCursor();
+        }
+    }
+
+    public void moveDown() {
+        // Moves the cursor down
+        int line = getLine();
+        int xPos = cursorX();
+        if (line != totalLines) {
+            cursor = getClosest(line + 1, xPos);
+            updateCursor();
+        }
+    }
+
+    private Node getClosest(int line, int xPos) {
+        // Helper function to get the Node that is closest to the xPos in the line
+        Node curr = lines[line];
+        Node next = curr.next;
+        int currX = 0;
+        while (!next.startLine) {
+            int nextX = (int) next.text.getX();
+            if (Math.abs(xPos - nextX) <= Math.abs(xPos - currX)) {
+                currX = nextX;
+                curr = next;
+                next = curr.next;
+            } else {
+                break;
+            }
+        }
+        return curr;
+    }
+
+    public void moveRight() {
+        // Moves the cursor to the right
+        if (cursor != end) {
+            cursor = cursor.next;
+            updateCursor();
+        }
+    }
+
+    public void moveLeft() {
+        // Moves the cursor to the left
+        if (cursor != start) {
+            cursor = cursor.prev;
+            updateCursor();
+        }
     }
 
     private int getLine() {

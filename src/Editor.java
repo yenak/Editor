@@ -109,6 +109,22 @@ public class Editor extends Application {
                         // Adds a newline to the text
                         text.add("\n");
 
+                    } else if (code == KeyCode.UP) {
+                        // Moves the cursor up
+                        text.moveUp();
+
+                    } else if (code == KeyCode.DOWN) {
+                        // Moves the cursor down
+                        text.moveDown();
+
+                    } else if (code == KeyCode.RIGHT) {
+                        // Moves the cursor to the right
+                        text.moveRight();
+
+                    } else if (code == KeyCode.LEFT) {
+                        // Moves the cursor to the left
+                        text.moveLeft();
+
                     }
                 }
             }
