@@ -51,7 +51,7 @@ public class LinkedList {
         link(start, end); // start.next = end; end.prev = start;
         cursor = end;
         lines[0] = start;
-        totalLines = 1;
+        totalLines = 0;
     }
 
     private class Node {
@@ -83,10 +83,10 @@ public class LinkedList {
         // add new Node with toBeAdded (should be a character) as text where cursor is
         // change cursor to be at the new Node
         // the new node should be inserted between cursor.prev and cursor
+        // If the cursor is at the start of a line, the new text should appear before the cursor on that line
         Node newNode = new Node(toBeAdded);
         link(cursor.prev, newNode);
         link(newNode, cursor);
-//        cursor.text.setX(cursorX() + newNode.text.getLayoutBounds().getWidth());
         render();
     }
 
@@ -154,15 +154,17 @@ public class LinkedList {
            TODO: keep cursor on spaces at end of line instead of on next line
          */
         Node current = start;
+        Node prev = null;
         int x = 5;
         int y = 0;
+        totalLines = 0;
         while (current != null) {
             Text text = current.text;
             text.setFont(Font.font(fontName, fontSize));
             int width = (int) text.getLayoutBounds().getWidth();
-            if ((x + width > (windowWidth - 5) && !text.getText().equals(" ")) || current.newline) {
+            if ((x + width > (windowWidth - 5) && !text.getText().equals(" ")) || (prev != null && prev.newline)) {
                 // If the new text goes over the page width and it is not a space, move onto next line
-                // If the new text is a newline character, move onto next line
+                // If the prev text is a newline character, move onto next line
 
                 x = 5;
                 y += text.getLayoutBounds().getHeight();
@@ -175,6 +177,7 @@ public class LinkedList {
             text.setX(x);
             text.setY(y);
             x += width;
+            prev = current;
             current = current.next;
         }
         updateCursor();
@@ -217,23 +220,17 @@ public class LinkedList {
 
     public void homeKey() {
         // Moves the cursor to the Node that is in the beginning of the line the cursor is on
-        System.out.println(cursorY());
-        System.out.println(getLine(cursor));
-        cursor = lines[getLine(cursor)];
+        cursor = lines[getLine()];
         if (cursor == start) {
             cursor = start.next;
         }
-        System.out.println(cursorY());
         updateCursor();
     }
 
-    private int getLine(Node node) {
-        // Gets the index of the line that node is in
-        Text ref = new Text("");
-        ref.setFont(Font.font(fontName, fontSize));
-        int yPos = (int) node.text.getY();
-        int yRef = (int) ref.getLayoutBounds().getHeight();
-        return yPos / yRef;
+    private int getLine() {
+        int yPos = cursorY();
+        int height = (int) cursor.text.getLayoutBounds().getHeight();
+        return yPos / height;
     }
 
     private void resize(int newCap) {
