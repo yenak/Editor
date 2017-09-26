@@ -14,6 +14,10 @@ import javafx.util.Duration;
 
 import java.io.*;
 
+// TODO: add a scrollbar
+// TODO: click cursor
+// TODO: use arrow keys
+
 
 /**
  * Created by Yena on 12/31/2016.
@@ -33,15 +37,6 @@ public class Editor extends Application {
 
     /** An EventHandler to handle keys that get pressed. */
     private class KeyEventHandler implements EventHandler<KeyEvent> {
-//        private static final int STARTING_FONT_SIZE = 20;
-//        private static final int STARTING_TEXT_POSITION_X = 0;
-//        private static final int STARTING_TEXT_POSITION_Y = 0;
-
-        /** The Text to display on the screen. */
-//        private Text displayText = new Text(STARTING_TEXT_POSITION_X, STARTING_TEXT_POSITION_Y, "");
-//        private int fontSize = STARTING_FONT_SIZE;
-
-//        private String fontName = "Verdana";
 
         KeyEventHandler(final Group root, int windowWidth, int windowHeight) {
             text = new LinkedList(root, windowHeight, windowWidth);
@@ -53,11 +48,22 @@ public class Editor extends Application {
                 // Use the KEY_TYPED event rather than KEY_PRESSED for letter keys, because with
                 // the KEY_TYPED event, javafx handles the "Shift" key and associated
                 // capitalization.
+
                 String characterTyped = keyEvent.getCharacter();
                 if (characterTyped.length() > 0 && characterTyped.charAt(0) != 8 && !keyEvent.isShortcutDown()) {
                     // Ignore control keys, which have non-zero length, as well as the backspace
                     // key, which is represented as a character of value = 8 on Windows.
-                    text.add(characterTyped);
+
+                    if (characterTyped.equals("\r")) {
+                        // Checks to see if user has pressed the return/enter key
+                        // Adds a newline to the text
+                        text.addLine();
+
+                    } else {
+                        // Adds a character normally
+                        text.add(characterTyped);
+                    }
+
                     keyEvent.consume();
                 }
             } else if (keyEvent.getEventType() == KeyEvent.KEY_PRESSED) {
@@ -66,12 +72,18 @@ public class Editor extends Application {
                 // KeyCode).
                 KeyCode code = keyEvent.getCode();
                 if (keyEvent.isShortcutDown()) {
+
                     if (code == KeyCode.PLUS || code == KeyCode.EQUALS) {
+                        // Increases the font size by 4
                         text.changeFontSize(4);
+
                     } else if (code == KeyCode.MINUS) {
+                        // Decreases the font size by 4
                         text.changeFontSize(-4);
+
                     } else if (code == KeyCode.S) {
-                        // Makes new FileWriter everytime it saves so it rewrites the file
+                        // Saves the file
+                        // Makes new FileWriter every time it saves so it rewrites the file
                         try {
                             writer = new FileWriter(fileName);
                         } catch (IOException ioexception) {
@@ -79,9 +91,15 @@ public class Editor extends Application {
                         }
                         text.save(writer);
                     }
+
                 } else {
                     if (code == KeyCode.BACK_SPACE) {
+                        // Deletes the character before the cursor
                         text.delete();
+
+                    } else if (code == KeyCode.HOME) {
+                        // Moves cursor so that it is in the beginning of the line it is on
+                        text.homeKey();
                     }
                 }
             }
@@ -163,13 +181,8 @@ public class Editor extends Application {
         makeCurosrBlink();
 
         // Adds everything from the initial file into text
-        System.out.println(initial);
-        for (int i = 0; i < initial.length(); i++) {
-            text.add(Character.toString(initial.charAt(i)));
-        }
+        text.addInitial(initial);
         text.save(writer);
-        text.render();
-
 
         primaryStage.setTitle("Editor 2.0");
 
