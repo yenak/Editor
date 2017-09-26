@@ -92,7 +92,6 @@ public class LinkedList {
 
     public void addInitial(String initial) {
         // Adds the initial text that is already in the opened file
-        System.out.println(initial);
         Node curr = start;
         for (int i = 0; i < initial.length(); i++) {
             String toAdd = Character.toString(initial.charAt(i));
@@ -138,6 +137,11 @@ public class LinkedList {
 
     public int cursorY() {
         return (int) cursor.text.getY();
+    }
+
+    public int getEnd() {
+        // Returns the Y position of the end of the document (y pos of end plus height of end)
+        return (int) (end.text.getY() + end.text.getLayoutBounds().getHeight());
     }
 
     public void changeFontSize(int sizeChange) {
@@ -219,10 +223,21 @@ public class LinkedList {
     }
 
     public void homeKey() {
-        // Moves the cursor to the Node that is in the beginning of the line the cursor is on
+        // Moves the cursor to the Node that is at the beginning of the line the cursor is on
         cursor = lines[getLine()];
         if (cursor == start) {
             cursor = start.next;
+        }
+        updateCursor();
+    }
+
+    public void endKey() {
+        // Moves the cursor to the Node that is at the end of the line the cursor is on
+        int line = getLine();
+        if (line < totalLines) {
+            cursor = lines[line + 1].prev;
+        } else {
+            cursor = end;
         }
         updateCursor();
     }

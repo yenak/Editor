@@ -1,10 +1,14 @@
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
+import javafx.geometry.Orientation;
 import javafx.scene.Group;
 import javafx.scene.Scene;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.paint.Color;
@@ -25,6 +29,7 @@ import java.io.*;
 public class Editor extends Application {
 
     private Group root;
+    private Group textRoot;
     private static final int STARTING_WINDOW_WIDTH = 500;
     private static final int STARTING_WINDOW_HEIGHT = 500;
     private static int WINDOW_WIDTH = STARTING_WINDOW_WIDTH;
@@ -34,12 +39,15 @@ public class Editor extends Application {
     private static FileWriter writer;
     private static String initial = "";
     private static String fileName;
+    private static int scrollBarWidth;
+    private static int usableScreenWidth;
+    private static ScrollBar scrollBar;
 
     /** An EventHandler to handle keys that get pressed. */
     private class KeyEventHandler implements EventHandler<KeyEvent> {
 
-        KeyEventHandler(final Group root, int windowWidth, int windowHeight) {
-            text = new LinkedList(root, windowHeight, windowWidth);
+        KeyEventHandler(final Group textRoot, int windowWidth, int windowHeight) {
+            text = new LinkedList(textRoot, windowHeight, windowWidth);
         }
 
         @Override
@@ -90,8 +98,12 @@ public class Editor extends Application {
                         text.delete();
 
                     } else if (code == KeyCode.HOME) {
-                        // Moves cursor so that it is in the beginning of the line it is on
+                        // Moves cursor so that it is at the beginning of the line it is on
                         text.homeKey();
+
+                    } else if (code == KeyCode.END) {
+                        // Moves cursor so that it is at the end of the line it is on
+                        text.endKey();
 
                     } else if (code == KeyCode.ENTER) {
                         // Adds a newline to the text
@@ -100,13 +112,22 @@ public class Editor extends Application {
                     }
                 }
             }
+            updateScrollBar();
         }
     }
 
     private void updateWindowSize(int newWidth, int newHeight) {
         WINDOW_WIDTH = newWidth;
         WINDOW_HEIGHT = newHeight;
-        text.updateWindowSize(newWidth, newHeight);
+        usableScreenWidth = WINDOW_WIDTH - scrollBarWidth;
+        text.updateWindowSize(usableScreenWidth, newHeight);
+    }
+
+    private void updateScrollBar() {
+        int end = text.getEnd() - WINDOW_HEIGHT;
+        scrollBar.setMax(end);
+        scrollBar.setUnitIncrement(end / 10);
+        scrollBar.setBlockIncrement(end / 10);
     }
 
     /** An EventHandler to handle blinking the cursor. */
@@ -148,6 +169,8 @@ public class Editor extends Application {
 
         // Create a Node that will be the parent of all things displayed on the screen.
         root = new Group();
+        textRoot = new Group();
+        root.getChildren().add(textRoot);
         // The Scene represents the window: its height and width will be the height and width
         // of the window displayed.
         Scene scene = new Scene(root, WINDOW_WIDTH, WINDOW_HEIGHT, Color.WHITE);
@@ -156,30 +179,62 @@ public class Editor extends Application {
         // EventHandler subclasses must override the "handle" function, which will be called
         // by javafx.
         EventHandler<KeyEvent> keyEventHandler =
-                new KeyEventHandler(root, WINDOW_WIDTH, WINDOW_HEIGHT);
+                new KeyEventHandler(textRoot, WINDOW_WIDTH, WINDOW_HEIGHT);
         // Register the event handler to be called for all KEY_PRESSED and KEY_TYPED events.
         scene.setOnKeyTyped(keyEventHandler);
         scene.setOnKeyPressed(keyEventHandler);
-
-
-        // Dealing with window resizing
-        scene.widthProperty().addListener((observableValue, oldScreenWidth, newScreenWidth) ->
-                updateWindowSize(newScreenWidth.intValue(), WINDOW_HEIGHT));
-
-        scene.heightProperty().addListener((observableValue, oldScreenHeight, newScreenHeight) ->
-                updateWindowSize(WINDOW_WIDTH, newScreenHeight.intValue()));
 
 
         // Initialize cursor and send it to the LinkedList where it gets updated every time it renders
         // Call makeCursorBlink() to make cursor blink forever
         cursor = new Rectangle(1, 1);
         text.setCursor(cursor);
-        root.getChildren().add(cursor);
+        textRoot.getChildren().add(cursor);
         makeCursorBlink();
+
+
+        // Creating Scroll Bar
+        scrollBar = new ScrollBar();
+        scrollBar.setOrientation(Orientation.VERTICAL);
+        scrollBar.setPrefHeight(WINDOW_HEIGHT);
+        scrollBar.setMin(0);
+        scrollBar.setMax(WINDOW_HEIGHT);
+        scrollBar.setValue(0);
+        root.getChildren().add(scrollBar);
+        scrollBarWidth = (int) scrollBar.getLayoutBounds().getWidth();
+        usableScreenWidth = WINDOW_WIDTH - scrollBarWidth;
+        text.updateWindowSize(usableScreenWidth, WINDOW_HEIGHT);
+        scrollBar.setLayoutX(usableScreenWidth);
+        scrollBar.valueProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(
+                    ObservableValue<? extends Number> observable,
+                    Number oldValue, Number newValue) {
+                textRoot.setLayoutY(-newValue.intValue());
+            }
+        });
+
+        // Dealing with window resizing
+        scene.widthProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldScreenWidth, Number newScreenWidth) {
+                updateWindowSize(newScreenWidth.intValue(), WINDOW_HEIGHT);
+                scrollBar.setLayoutX(usableScreenWidth);
+            }
+        });
+
+        scene.heightProperty().addListener(new ChangeListener<Number>() {
+            @Override
+            public void changed(ObservableValue<? extends Number> observable, Number oldScreenHeight, Number newScreenHeight) {
+                updateWindowSize(WINDOW_WIDTH, newScreenHeight.intValue());
+                scrollBar.setPrefHeight(WINDOW_HEIGHT);
+            }
+        });
 
         // Adds everything from the initial file into text
         text.addInitial(initial);
         text.save(writer);
+        updateScrollBar();
 
         primaryStage.setTitle("Editor 2.0   " + fileName);
 
