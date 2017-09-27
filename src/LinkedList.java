@@ -34,7 +34,6 @@ public class LinkedList {
     private int windowWidth;
     private Rectangle cursorRec;
     private int capacity = 30;
-    private int factor = 2;
     private int totalLines;
     private Node[] lines = new Node[capacity];
 
@@ -160,21 +159,24 @@ public class LinkedList {
 
     /** Renders the whole text. */
     public void render() {
-        /*
-           Renders the whole text from the start node to the end node.
-           TODO: create new line when word is cut off
-           TODO: don't rerender if you're adding to a line that has enough space for the new character
-           TODO: keep cursor on spaces at end of line instead of on next line
-         */
         Node current = start;
         Node prev = null;
         int x = 5;
         int y = 0;
         totalLines = 0;
+        int factor = 2; // The factor by which to multiply the capacity
+        Node wordStart = current;
+        int wordLength = 0;
         while (current != null) {
             Text text = current.text;
             text.setFont(Font.font(fontName, fontSize));
             int width = (int) text.getLayoutBounds().getWidth();
+            if (prev != null && (prev == start || prev.newline || prev.text.getText().equals(" "))) {
+                wordStart = current;
+                wordLength = width;
+            } else {
+                wordLength += width;
+            }
             if ((x + width > (windowWidth - 5) && !text.getText().equals(" ")) || (prev != null && prev.newline)) {
                 // If the new text goes over the page width and it is not a space, move onto next line
                 // If the prev text is a newline character, move onto next line
@@ -185,8 +187,21 @@ public class LinkedList {
                 if (totalLines >= capacity) {
                     resize(capacity * factor);
                 }
-                lines[totalLines] = current;
-                current.startLine = true;
+                if (!wordStart.startLine) {
+                    lines[totalLines] = wordStart;
+                    wordStart.startLine = true;
+                    Node word = wordStart;
+                    while (word != current) {
+                        Text wordText = word.text;
+                        wordText.setX(x);
+                        wordText.setY(y);
+                        x += wordText.getLayoutBounds().getWidth();
+                        word = word.next;
+                    }
+                } else {
+                    lines[totalLines] = current;
+                    current.startLine = true;
+                }
             } else {
                 current.startLine = false;
             }
@@ -195,6 +210,9 @@ public class LinkedList {
             x += width;
             prev = current;
             current = current.next;
+        }
+        if (totalLines < capacity / factor && totalLines > 30) {
+            resize(capacity / factor);
         }
         updateCursor();
     }
@@ -322,7 +340,7 @@ public class LinkedList {
     /** Resizes the lines array to the newCap by creating a new array of size newCap and copying things over. */
     private void resize(int newCap) {
         Node[] newLines = new Node[newCap];
-        System.arraycopy(lines, 0, newLines, 0, capacity);
+        System.arraycopy(lines, 0, newLines, 0, totalLines);
         this.lines = newLines;
         capacity = newCap;
     }
