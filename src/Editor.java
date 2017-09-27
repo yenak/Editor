@@ -4,6 +4,7 @@ import javafx.application.Application;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.Group;
@@ -11,6 +12,7 @@ import javafx.scene.Scene;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.scene.shape.Rectangle;
@@ -18,14 +20,6 @@ import javafx.util.Duration;
 
 import java.io.*;
 
-// TODO: add a scrollbar
-// TODO: click cursor
-// TODO: use arrow keys
-
-
-/**
- * Created by Yena on 12/31/2016.
- */
 public class Editor extends Application {
 
     private Group root;
@@ -132,6 +126,7 @@ public class Editor extends Application {
         }
     }
 
+    /** Updates the size of the window. */
     private void updateWindowSize(int newWidth, int newHeight) {
         WINDOW_WIDTH = newWidth;
         WINDOW_HEIGHT = newHeight;
@@ -139,6 +134,7 @@ public class Editor extends Application {
         text.updateWindowSize(usableScreenWidth, newHeight);
     }
 
+    /** Updates the scrollbar. */
     private void updateScrollBar() {
         int end = text.getEnd() - WINDOW_HEIGHT;
         scrollBar.setMax(end);
@@ -175,9 +171,22 @@ public class Editor extends Application {
         // The cursor should continue blinking forever.
         timeline.setCycleCount(Timeline.INDEFINITE);
         CursorHandler cursorChange = new CursorHandler();
-        KeyFrame keyFrame = new KeyFrame(Duration.seconds(1), cursorChange);
+        KeyFrame keyFrame = new KeyFrame(Duration.seconds(.5), cursorChange);
         timeline.getKeyFrames().add(keyFrame);
         timeline.play();
+    }
+
+    /** An EventHandler to handle mouse clicks. */
+    private class MouseClickEventHandler implements EventHandler<MouseEvent> {
+        int mouseX;
+        int mouseY;
+
+        @Override
+        public void handle(MouseEvent mouseEvent) {
+            mouseX = (int) Math.round(mouseEvent.getX());
+            mouseY = (int) Math.round(mouseEvent.getY());
+            text.moveCursor(mouseX, mouseY);
+        }
     }
 
     @Override
@@ -208,6 +217,8 @@ public class Editor extends Application {
         textRoot.getChildren().add(cursor);
         makeCursorBlink();
 
+        // Add the EventHandler for mouse clicks.
+        scene.setOnMouseClicked(new MouseClickEventHandler());
 
         // Creating Scroll Bar
         scrollBar = new ScrollBar();

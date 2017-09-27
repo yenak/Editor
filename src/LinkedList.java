@@ -9,11 +9,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 
-/**
- * Created by Yena on 12/31/2016.
- */
 public class LinkedList {
-    /*
+    /**
          The LinkedList is the entire text.
          Each node in the LinkedList is a typed character except for the start and end Nodes.
          There will be an array that represents the lines with each element pointing to a Node in the LinkedList where
@@ -42,7 +39,7 @@ public class LinkedList {
     private Node[] lines = new Node[capacity];
 
 
-    public LinkedList(Group root, int windowHeight, int windowWidth/*, String fontName, int fontSize*/) {
+    public LinkedList(Group root, int windowHeight, int windowWidth) {
         this.root = root;
         this.windowWidth = windowWidth;
         this.windowHeight = windowHeight;
@@ -54,6 +51,7 @@ public class LinkedList {
         totalLines = 0;
     }
 
+    /** Node is each element of the LinkedList. Each node holds one character in the text.*/
     private class Node {
         // x, y positions of the text refer to the top left corner of the text
         Text text;
@@ -80,6 +78,7 @@ public class LinkedList {
         }
     }
 
+    /** Adds a new Node where the cursor is. */
     public void add(String toBeAdded) {
         // add new Node with toBeAdded (should be a character) as text where cursor is
         // change cursor to be at the new Node
@@ -91,8 +90,9 @@ public class LinkedList {
         render();
     }
 
+
+    /** Adds the initial text that is already in the opened file. */
     public void addInitial(String initial) {
-        // Adds the initial text that is already in the opened file
         Node curr = start;
         for (int i = 0; i < initial.length(); i++) {
             String toAdd = Character.toString(initial.charAt(i));
@@ -104,8 +104,8 @@ public class LinkedList {
         render();
     }
 
+    /** Deletes Node that is before the Node where the cursor is at (cursor.prev). */
     public void delete() {
-        // delete Node that is before the Node where the cursor is at (cursor.prev)
         if (!cursor.equals(start) && !cursor.prev.equals(start)) {
             root.getChildren().remove(cursor.prev.text);
             link(cursor.prev.prev, cursor);
@@ -113,23 +113,29 @@ public class LinkedList {
         }
     }
 
+    /** Sets the Rectangle cursor to the correct cursor node. */
     public void setCursor(Rectangle cursor) {
-        // sets the Rectangle cursor to the correct cursor node
         cursorRec = cursor;
         cursorRec.setFill(Color.BLACK);
         updateCursor();
     }
 
+    /** Updates the cursor size and position. */
     private void updateCursor() {
-        // updates cursor size and position
         cursorRec.setHeight((int) cursor.text.getLayoutBounds().getHeight());
         cursorRec.setX(cursorX());
         cursorRec.setY(cursorY());
     }
 
-    public void moveCursor() {
-        // changes cursor node to new location
-        // TODO: change cursor node to new location
+    /** Moves the cursor to the closest Node to (xPos, yPos). */
+    public void moveCursor(int xPos, int yPos) {
+        int height = (int) cursor.text.getLayoutBounds().getHeight();
+        int line = yPos / height;
+        if (line > totalLines) {
+            line = totalLines;
+        }
+        cursor = getClosest(line, xPos);
+        updateCursor();
     }
 
     public int cursorX() {
@@ -140,17 +146,19 @@ public class LinkedList {
         return (int) cursor.text.getY();
     }
 
+    /** Returns the Y position of the end of the document (y pos of end plus height of end). */
     public int getEnd() {
-        // Returns the Y position of the end of the document (y pos of end plus height of end)
         return (int) (end.text.getY() + end.text.getLayoutBounds().getHeight());
     }
 
+    /** Changes the font size for the whole text. */
     public void changeFontSize(int sizeChange) {
         fontSize += sizeChange;
         if (fontSize < 0) fontSize = 0;
         render();
     }
 
+    /** Renders the whole text. */
     public void render() {
         /*
            Renders the whole text from the start node to the end node.
@@ -191,8 +199,8 @@ public class LinkedList {
         updateCursor();
     }
 
+    /** Puts all the text into a string that is to be written to the file. */
     public void save(FileWriter writer) {
-        // Puts all the text into a string that is to be written to the file.
         StringBuilder text = new StringBuilder("");
         Node current = start.next;
         while (current != end) {
@@ -214,20 +222,21 @@ public class LinkedList {
         }
     }
 
+    /** Sets Node a to be before Node b. */
     private void link(Node a, Node b) {
-        // sets node a to be before node b
         a.next = b;
         b.prev = a;
     }
 
+    /** Updates the size of the window. */
     public void updateWindowSize(int newWidth, int newHeight) {
         windowWidth = newWidth;
         windowHeight = newHeight;
         render();
     }
 
+    /** Moves the cursor to the Node that is at the beginning of the line the cursor is on. */
     public void homeKey() {
-        // Moves the cursor to the Node that is at the beginning of the line the cursor is on
         cursor = lines[getLine()];
         if (cursor == start) {
             cursor = start.next;
@@ -235,8 +244,8 @@ public class LinkedList {
         updateCursor();
     }
 
+    /** Moves the cursor to the Node that is at the end of the line the cursor is on. */
     public void endKey() {
-        // Moves the cursor to the Node that is at the end of the line the cursor is on
         int line = getLine();
         if (line < totalLines) {
             cursor = lines[line + 1].prev;
@@ -246,8 +255,8 @@ public class LinkedList {
         updateCursor();
     }
 
+    /** Moves the cursor up. */
     public void moveUp() {
-        // Moves the cursor up
         int line = getLine();
         int xPos = cursorX();
         if (line != 0) {
@@ -256,8 +265,8 @@ public class LinkedList {
         }
     }
 
+    /** Moves the cursor down. */
     public void moveDown() {
-        // Moves the cursor down
         int line = getLine();
         int xPos = cursorX();
         if (line != totalLines) {
@@ -266,12 +275,12 @@ public class LinkedList {
         }
     }
 
+    /** Helper function to get the Node that is closest to the xPos in the line. */
     private Node getClosest(int line, int xPos) {
-        // Helper function to get the Node that is closest to the xPos in the line
         Node curr = lines[line];
         Node next = curr.next;
         int currX = 0;
-        while (!next.startLine) {
+        while (!next.startLine && next != end) {
             int nextX = (int) next.text.getX();
             if (Math.abs(xPos - nextX) <= Math.abs(xPos - currX)) {
                 currX = nextX;
@@ -281,33 +290,37 @@ public class LinkedList {
                 break;
             }
         }
+        if (next == end) {
+            return end;
+        }
         return curr;
     }
 
+    /** Moves the cursor to the right. */
     public void moveRight() {
-        // Moves the cursor to the right
         if (cursor != end) {
             cursor = cursor.next;
             updateCursor();
         }
     }
 
+    /** Moves the cursor to the left. */
     public void moveLeft() {
-        // Moves the cursor to the left
         if (cursor != start) {
             cursor = cursor.prev;
             updateCursor();
         }
     }
 
+    /** Gets the line number of the line the cursor is on. */
     private int getLine() {
         int yPos = cursorY();
         int height = (int) cursor.text.getLayoutBounds().getHeight();
         return yPos / height;
     }
 
+    /** Resizes the lines array to the newCap by creating a new array of size newCap and copying things over. */
     private void resize(int newCap) {
-        // Resizes the lines array to the newCap by creating a new array of size newCap and copying things over
         Node[] newLines = new Node[newCap];
         System.arraycopy(lines, 0, newLines, 0, capacity);
         this.lines = newLines;
